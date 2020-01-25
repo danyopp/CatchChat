@@ -1,3 +1,9 @@
+The following program includes a python chat server and a c chat client. Starting the server and directing the client to access the specific port the server is listening on will allow simple text messages to be sent back and forth between the two machines.
+
+Update plans:
+	multi-threaded listening. 
+
+
 To Run program:
 1. compile c program! Do this by typing "gcc chatclient.c -o chatclient" into the terminal in the same directory as the file
 
@@ -8,6 +14,6 @@ To Run program:
 4. Follow the prompts in the program. Client sends first message. Type \quit to end chat in either terminal.
 
 5. ctrl+c to stop server
-Note: 
-	Current implementation only allows for a single message to be delivered back and forth at a time. Version with multi threads is coming for simulatantious communication
+
+
 
