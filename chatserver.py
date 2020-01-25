@@ -1,10 +1,8 @@
-#!/usr/bin/python
-
 # Author: Daniel Yopp
 # Date: 7/25/19
 # Assignment: CS372 - ChatServer Project
 # Description: A TCP server to connect to the chat client
-# Note: w3schools.com and pythonforbeginners.com were used as references for this code
+
 
 from socket import *
 import sys
@@ -13,7 +11,7 @@ import time
 
 ################################################
 ## Name: Tail functions
-## Description: Adds checks or removes a @@@ tail from a string object
+## Description: Adds, checks, or removes, a @@@ tail from a string object
 ################################################
 def AddTail(buff):
 	tempbuff = "@@@"
@@ -30,7 +28,7 @@ def RemoveTail(buff):
 
 ################################################
 ## Name: Meet Function
-## Description: recieve client username and send server username
+## Description: receive client username and send server username
 ################################################
 def ServerClientMeet(connectionSocket, serverName):
 	clientName = connectionSocket.recv(1024)
@@ -40,16 +38,16 @@ def ServerClientMeet(connectionSocket, serverName):
 
 ################################################
 ## Name: Client Chat
-## Description: Recieves a message from the client the sends a message to the client in loop
+## Description: Receives a message from the client the sends a message to the client in loop
 ################################################
 def chatService(connectionSocket, clientName, serverName):
 	sendingMSG = ""
 	incomingMSG = ""
-	while 1:    #send recieve loop
+	while 1:    #send receive loop
 	#client message
 		incomingMSG = ""
 		print "\n***Waiting for Client Message***"
-		while not CheckTail(incomingMSG): #loop to recieve all of client message until ending tail is detected
+		while not CheckTail(incomingMSG): #loop to receive all of client message until ending tail is detected
 			incomingMSG = connectionSocket.recv(501)
 			time.sleep(.1)
 		#check if client requests quit
@@ -104,7 +102,7 @@ if __name__ == "__main__":
 	serverSocket = socket(AF_INET,SOCK_STREAM) #create TCP socket
 	serverSocket.bind(('',serverPort)) #bind the port to the socket 
 	serverSocket.listen(1) #begin listening for connections
-	print "Server Socket Setup Complete\nServer Ready to recieve chat requests"
+	print "Server Socket Setup Complete\nServer Ready to receive chat requests"
 	while 1:
 		#create private socket for incoming connection
 		connectionSocket, addr = serverSocket.accept()

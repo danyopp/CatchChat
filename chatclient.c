@@ -2,7 +2,7 @@
 ** Author: Daniel Yopp 
 ** Date: 7/26/19
 ** Program Name: ChatClient
-** Description: The client that connects and enables chating function 
+** Description: A chat client that connects to the chatserver enable communication 
 ********************************************************/
 
 #include <stdio.h>
@@ -17,9 +17,11 @@
 ////////////////////////////////////////////////////////
 //Name: addTail
 //Description: Adds a tail of "@@@" to the cstring parameter
+//			   Risk of buffer overflow if cstring is completely full
+//			   Not possible in this program the way the buffer is malloced	
 ////////////////////////////////////////////////////////
 void addTail(char* buff)
-{
+{	
 	int stringLength = strlen(buff); //counts char not including '\0'
 	buff[stringLength] = '@';
 	buff[stringLength+1] = '@';
@@ -73,58 +75,62 @@ void removeTail(char* buff)
 /////////////////////////////////////////////////////
 void ChatCycle( int socketFD, char* serverName, char* clientName )
 {
-   char* buffer= malloc(sizeof(char[504]));	
+
+   size_t bufsize = 500; //size of input allowed, must be 4 less than size of array to allow for @@@\n tail
+
+   char* buffer= malloc(sizeof(char[bufsize+4]));	
    while(1)
    {	
-	int charsWritten;
-	size_t bufsize = 500; //size of input allowed
+		int charsWritten;
+		
 
-    //gather client message input
-	memset(buffer, '\0', 504); //clear buffer
-	printf("%s> ", clientName); //print client username as prompt
-	getline(&buffer, &bufsize , stdin); //get user input(getline includes \n
+		//gather client message input
+		memset(buffer, '\0', 504); //clear buffer
+		printf("%s> ", clientName); //print client username as prompt
+		getline(&buffer, &bufsize , stdin); //get user input(getline includes \n
+			//will leave anything longer than bufsize in stdin- consider flushing?
 
-	//check if client wants  to terminate chat
-	if(strcmp("\\quit\n", buffer) == 0)
-		{printf("---Client Termination Request\n");
-		 addTail(buffer); // add @@@ tail
-		 charsWritten = send(socketFD, buffer, strlen(buffer), 0); //send term notice to server
-		 if (charsWritten < 0) {fprintf(stderr, "Client: ERROR sending message"); exit(0);}
-		 if (charsWritten < strlen(buffer)) {printf("Client: Warning! message fragmented!");}
-		 fflush(stdout); 
-		 break; //get out of while loop
-		}
+		//check if client wants  to terminate chat
+		if(strcmp("\\quit\n", buffer) == 0)
+			{printf("---Client Termination Request\n");
+			addTail(buffer); // add @@@ tail
+			charsWritten = send(socketFD, buffer, strlen(buffer), 0); //send term notice to server
+			if (charsWritten < 0) {fprintf(stderr, "Client: ERROR sending message"); exit(0);}
+			if (charsWritten < strlen(buffer)) {printf("Client: Warning! message fragmented!");}
+			fflush(stdout); 
+			break; //get out of while loop
+			}
 
-    //send client message
-	addTail(buffer);// add @@@ tail
-	charsWritten = send(socketFD, buffer, strlen(buffer) , 0); //send to server
-	if (charsWritten < 0) {fprintf(stderr, "Client: ERROR sending message"); exit(0);}
-	if (charsWritten < strlen(buffer)) {printf("Client: Warning! message fragmented!");}
-	fflush(stdout);	
+		//send client message
+		addTail(buffer);// add @@@ tail
+		charsWritten = send(socketFD, buffer, strlen(buffer) , 0); //send to server
+		if (charsWritten < 0) {fprintf(stderr, "Client: ERROR sending message"); exit(0);}
+		if (charsWritten < strlen(buffer)) {printf("Client: Warning! message fragmented!");}
+		fflush(stdout);	
 
-    //recieve server message
-	printf("\n***Waiting on Server Message***\n");
-	char holdingBuffer[504];
-	int charsRead = 0;
-	memset( holdingBuffer, '\0', sizeof(holdingBuffer)); //clear buffer for recieving server message
+		//recieve server message
+		printf("\n***Waiting on Server Message***\n");
+		char holdingBuffer[504];
+		int charsRead = 0;
+		memset( holdingBuffer, '\0', sizeof(holdingBuffer)); //clear buffer for recieving server message
 
-	while (checkTail(holdingBuffer) ) //checktail returns 1 if @@@ tail is not present
-		{
-		 memset(buffer, '\0', sizeof(buffer));
-		 charsRead = recv(socketFD, buffer, sizeof(buffer)-1, 0);
-		 strcat(holdingBuffer, buffer);//copy whats received to the holding buffer
-		}
-	removeTail(holdingBuffer); //remove @@@ tail from server message
+		while (checkTail(holdingBuffer) ) //checktail returns 1 if @@@ tail is not present
+			{
+			memset(buffer, '\0', sizeof(buffer));
+			charsRead = recv(socketFD, buffer, sizeof(buffer)-1, 0);
+			strcat(holdingBuffer, buffer);//copy whats received to the holding buffer
+			}
+		removeTail(holdingBuffer); //remove @@@ tail from server message
 
-	//check if server requests term
-	if(strcmp("\\quit", holdingBuffer) == 0)
-		{printf("\n---Server Termination Request\n   Goodbye :)\n");
-		 fflush(stdout);
- 		 break;}
-	else
-		{printf("\n%s> %s\n\n", serverName, holdingBuffer );
-		 fflush(stdout);
-		}
+		//check if server requests term
+		if(strcmp("\\quit", holdingBuffer) == 0)
+			{printf("\n---Server Termination Request\n   Goodbye :)\n");
+			fflush(stdout);
+			break;}
+		else
+			{printf("\n%s> %s\n\n", serverName, holdingBuffer );
+			fflush(stdout);
+			}
    }//end of while loop
    free(buffer);//release mem		
 }
@@ -153,6 +159,7 @@ int main(int argc, char *argv[])
 		{   printf("ERROR: Client name too long!\n");}
 	}
 
+	//socket declarations
 	int socketFD, portNumber, charsWritten, charsRead;
 	struct sockaddr_in serverAddress;
 	struct hostent* serverHostInfo;
